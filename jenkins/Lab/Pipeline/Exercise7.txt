@@ -1,0 +1,28 @@
+docker should be installed on the machine.
+	install docker plugins
+		"Docker" and 
+		"Docker Pipeline"
+		
+	Either add jenkins user to docker group and Ensure docker is running
+				or
+	
+
+
+
+
+----------------------------------------
+pipeline {
+    agent {
+        docker {
+            image 'ubuntu'
+        }
+    }
+        stages {
+            stage('One') {
+            steps {
+            echo 'hello'
+				}
+            }
+        }
+	}
+----------------------------------------	

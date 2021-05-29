@@ -1,0 +1,44 @@
+pipeline{
+    agent any
+    tools {
+        maven 'M3'
+    }
+    stages{
+        stage('Maven Build'){
+            steps{
+                sh "mvn clean package"
+            }
+        }
+        stage('Docker Build'){
+            steps{
+                sh "docker build . -t vilasvarghese/mywebapp:${dockerTag()}"
+            }
+        }
+        stage('DockerHub Push Image'){
+            steps{
+                withCredentials([string(credentialsId: 'docker-hub', variable: 'dockerPwd')]) {
+                    sh "docker login -u vilasvarghese -p ${dockerPwd}"
+                }
+                
+                sh "docker push vilasvarghese/mywebapp:${dockerTag()}"
+            }
+        }
+        stage('Docker Deploy Dev'){
+            steps{
+				sh(returnStdout: true, script: '''#!/bin/bash
+				if ( docker ps -a | grep 'mywebapp' )
+				then
+					docker stop mywebapp
+					docker rm -f mywebapp
+				fi'''.stripIndent())
+				sh "docker rmi vilasvarghese/mywebapp:${dockerTag()}"
+				sh "docker run -d -p 8181:8080 --name mywebapp vilasvarghese/mywebapp:${dockerTag()}"
+            }
+        }
+    }
+}
+
+def dockerTag(){
+    def commitId = sh returnStdout: true, script: 'git rev-parse --short HEAD'
+	return commitId
+}
